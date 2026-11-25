@@ -8,11 +8,11 @@
         "components": [
           {
             "/": "/eatmatch/i",
-            "comment": "餓選1 食帖分享連結"
+            "comment": "餓選E 食帖分享連結"
           },
           {
             "/": "/eatmatch/i/*",
-            "comment": "餓選1 食帖分享連結"
+            "comment": "餓選E 食帖分享連結"
           }
         ]
       }
