@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>朋友推給你的口袋愛店 · 餓選1</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<main>
+<header class="site">
+  <img src="../assets/app_icon.png" alt="餓選1 圖示">
+  <div><h1>餓選1</h1><p>現在，吃哪一家？</p></div>
+</header>
+
+<h1 id="title">朋友推給你的口袋愛店</h1>
+<div id="list"></div>
+<p id="empty" class="meta" hidden>這個連結沒有可以顯示的店家，可能沒有複製完整。</p>
+
+<p><a id="open" class="btn" href="#">在餓選1打開</a></p>
+<p class="meta">已經安裝餓選1，點上面的按鈕就會打開 App 並顯示匯入預覽。<br>
+還沒有餓選1？App 即將上架，敬請期待。</p>
+
+<footer><a href="../">餓選1 支援首頁</a> · <a href="../privacy.html">隱私權政策</a><br>
+店家資料放在網址的 # 之後，只在你的瀏覽器裡讀取，不會傳送到伺服器。</footer>
+</main>
+<script>
+// 安全原則：分享碼是別人產生的，不可信。只解析 JSON、只用 textContent 顯示純文字，
+// 絕不使用 innerHTML；長度與店家數都有上限；「打開」按鈕只會組出固定格式的 eatmatch:// 網址。
+(function () {
+  var MAX_CODE = 64 * 1024, MAX_SPOTS = 100, MAX_TEXT = 60;
+  function param(name) {
+    var sources = [location.hash.replace(/^#/, ''), location.search.replace(/^\?/, '')];
+    for (var i = 0; i < sources.length; i++) {
+      var parts = sources[i].split('&');
+      for (var j = 0; j < parts.length; j++) {
+        var kv = parts[j].split('=');
+        if (kv[0] === name && kv.length > 1) {
+          try { return decodeURIComponent(kv.slice(1).join('=').replace(/\+/g, '%2B')); }
+          catch (e) { return null; }
+        }
+      }
+    }
+    return null;
+  }
+  function clean(v, max) {
+    var s = (v === null || v === undefined) ? '' : String(v);
+    s = s.replace(/[\u0000-\u001F\u007F-\u009F​‌‎‏‪-‮⁠-⁩﻿]/g, '')
+         .replace(/\s+/g, ' ').trim();
+    return Array.from(s).slice(0, max).join('');
+  }
+  function decode(code) {
+    if (!code || code.length > MAX_CODE || code.indexOf('EM1:') !== 0) return null;
+    var b = code.slice(4).replace(/-/g, '+').replace(/_/g, '/');
+    while (b.length % 4) b += '=';
+    try {
+      var bin = atob(b), bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      var data = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+      return (data && Array.isArray(data.s)) ? data : null;
+    } catch (e) { return null; }
+  }
+  var code = param('c');
+  var data = decode(code);
+  var list = document.getElementById('list');
+  var spots = data ? data.s.filter(function (x) { return x && typeof x === 'object'; }).slice(0, MAX_SPOTS) : [];
+  if (!spots.length) {
+    document.getElementById('empty').hidden = false;
+    document.getElementById('open').hidden = true;
+    return;
+  }
+  if (spots.length > 1) {
+    document.getElementById('title').textContent = '朋友推給你 ' + spots.length + ' 家口袋愛店';
+  }
+  spots.forEach(function (x) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    var name = document.createElement('strong');
+    name.textContent = clean(x.n, MAX_TEXT) || '未命名店家';
+    var meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = [clean(x.a, 20), clean(x.b, 4), clean(x.c, 20)].filter(Boolean).join(' · ');
+    card.appendChild(name);
+    card.appendChild(meta);
+    var addr = clean(x.addr, 120);
+    if (addr) {
+      var a = document.createElement('div');
+      a.className = 'meta';
+      a.textContent = addr;
+      card.appendChild(a);
+    }
+    list.appendChild(card);
+  });
+  // 只轉成 URL-safe 字元，組出固定 scheme 的網址，不帶入任何其他輸入。
+  var safe = 'EM1:' + code.slice(4).replace(/[^A-Za-z0-9\-_+\/=]/g, '');
+  document.getElementById('open').href = 'eatmatch://i?c=' + encodeURIComponent(safe);
+})();
+</script>
+</body>
+</html>

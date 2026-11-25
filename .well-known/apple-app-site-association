@@ -1,0 +1,21 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "KYP552K42L.vam.eatMatch.app"
+        ],
+        "components": [
+          {
+            "/": "/eatmatch/i",
+            "comment": "餓選1 食帖分享連結"
+          },
+          {
+            "/": "/eatmatch/i/*",
+            "comment": "餓選1 食帖分享連結"
+          }
+        ]
+      }
+    ]
+  }
+}
