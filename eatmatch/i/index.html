@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>朋友推給你的口袋愛店 · 餓選1</title>
-<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/site.css?v=2">
 </head>
 <body>
 <main>
@@ -18,9 +18,14 @@
 <div id="list"></div>
 <p id="empty" class="meta" hidden>這個連結沒有可以顯示的店家，可能沒有複製完整。</p>
 
+<p id="opening" class="meta" hidden>正在打開餓選1…</p>
 <p><a id="open" class="btn" href="#">在餓選1打開</a></p>
-<p class="meta">已經安裝餓選1，點上面的按鈕就會打開 App 並顯示匯入預覽。<br>
-還沒有餓選1？App 即將上架，敬請期待。</p>
+<div id="download" class="card" hidden>
+  <strong>還沒有餓選1？</strong>
+  <p id="download-soon" class="meta">App 即將上架，敬請期待。上架後，下載餓選1 再回來點這個連結，就能把這些店收進口袋。</p>
+  <p><a id="download-link" class="btn ghost" href="#" hidden>下載餓選1</a></p>
+</div>
+<p class="meta">已經安裝餓選1？頁面會自動打開 App；沒有反應的話請點上面的按鈕。</p>
 
 <footer><a href="../">餓選1 支援首頁</a> · <a href="../privacy.html">隱私權政策</a><br>
 店家資料放在網址的 # 之後，只在你的瀏覽器裡讀取，不會傳送到伺服器。</footer>
@@ -28,6 +33,36 @@
 <script>
 // 安全原則：分享碼是別人產生的，不可信。只解析 JSON、只用 textContent 顯示純文字，
 // 絕不使用 innerHTML；長度與店家數都有上限；「打開」按鈕只會組出固定格式的 eatmatch:// 網址。
+// 下載連結：上架或開放 TestFlight 公開測試後填入（App Store／TestFlight 網址），空字串表示尚未上架。
+var DOWNLOAD_URL = '';
+
+// 自動打開 App：iPhone／Android 上載入後試一次；1.6 秒後頁面仍在前景，表示沒裝 App，改顯示下載區。
+// 每個連結在同一個分頁只自動試一次，避免使用者按「返回」又被帶走。
+function autoOpen(appUrl) {
+  var mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  var key = 'eatmatch-tried:' + location.hash.length + ':' + location.hash.slice(-16);
+  var showDownload = function () {
+    document.getElementById('opening').hidden = true;
+    document.getElementById('download').hidden = false;
+    if (DOWNLOAD_URL) {
+      var link = document.getElementById('download-link');
+      link.href = DOWNLOAD_URL;
+      link.hidden = false;
+      document.getElementById('download-soon').hidden = true;
+    }
+  };
+  if (!mobile) { showDownload(); return; }
+  var tried = false;
+  try { tried = sessionStorage.getItem(key) === '1'; sessionStorage.setItem(key, '1'); } catch (e) {}
+  if (tried) { showDownload(); return; }
+  document.getElementById('opening').hidden = false;
+  var timer = setTimeout(showDownload, 1600);
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) clearTimeout(timer);
+  });
+  window.location.href = appUrl;
+}
+
 (function () {
   var MAX_CODE = 64 * 1024, MAX_SPOTS = 100, MAX_TEXT = 60;
   function param(name) {
@@ -94,7 +129,10 @@
   });
   // 只轉成 URL-safe 字元，組出固定 scheme 的網址，不帶入任何其他輸入。
   var safe = 'EM1:' + code.slice(4).replace(/[^A-Za-z0-9\-_+\/=]/g, '');
-  document.getElementById('open').href = 'eatmatch://i?c=' + encodeURIComponent(safe);
+  var appUrl = 'eatmatch://i?c=' + encodeURIComponent(safe);
+  document.getElementById('open').href = appUrl;
+  autoOpen(appUrl);
+
 })();
 </script>
 </body>

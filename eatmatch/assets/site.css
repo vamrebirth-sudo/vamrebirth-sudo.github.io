@@ -15,3 +15,4 @@ h2{font-size:19px;margin:32px 0 8px}
 .btn.ghost{background:transparent;color:var(--brand);border:1px solid var(--brand)}
 ul{padding-left:1.2em}
 footer{margin-top:48px;color:var(--muted);font-size:13px}
+[hidden]{display:none!important}
