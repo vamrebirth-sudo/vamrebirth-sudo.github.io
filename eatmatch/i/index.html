@@ -85,19 +85,37 @@ function autoOpen(appUrl) {
          .replace(/\s+/g, ' ').trim();
     return Array.from(s).slice(0, max).join('');
   }
-  function decode(code) {
-    if (!code || code.length > MAX_CODE || code.indexOf('EM1:') !== 0) return null;
+  // EM2: raw deflate 壓縮的 JSON（新版）；EM1: 未壓縮的 JSON（舊海報、舊連結）。
+  var MAX_INFLATED = 64 * 1024;
+  function bytesOf(code) {
     var b = code.slice(4).replace(/-/g, '+').replace(/_/g, '/');
     while (b.length % 4) b += '=';
-    try {
-      var bin = atob(b), bytes = new Uint8Array(bin.length);
-      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    var bin = atob(b), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+  function inflate(bytes) {
+    if (typeof DecompressionStream === 'undefined') return Promise.reject(new Error('no inflate'));
+    var stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return new Response(stream).arrayBuffer().then(function (buf) {
+      if (buf.byteLength > MAX_INFLATED) throw new Error('too large');
+      return new Uint8Array(buf);
+    });
+  }
+  function decode(code) {
+    if (!code || code.length > MAX_CODE) return Promise.resolve(null);
+    var v2 = code.indexOf('EM2:') === 0;
+    if (!v2 && code.indexOf('EM1:') !== 0) return Promise.resolve(null);
+    var raw;
+    try { raw = bytesOf(code); } catch (e) { return Promise.resolve(null); }
+    return (v2 ? inflate(raw) : Promise.resolve(raw)).then(function (bytes) {
       var data = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
       return (data && Array.isArray(data.s)) ? data : null;
-    } catch (e) { return null; }
+    }).catch(function () { return null; });
   }
   var code = param('c');
-  var data = decode(code);
+  decode(code).then(function (data) { render(code, data); });
+  function render(code, data) {
   var list = document.getElementById('list');
   var spots = data ? data.s.filter(function (x) { return x && typeof x === 'object'; }).slice(0, MAX_SPOTS) : [];
   if (!spots.length) {
@@ -128,10 +146,12 @@ function autoOpen(appUrl) {
     list.appendChild(card);
   });
   // 只轉成 URL-safe 字元，組出固定 scheme 的網址，不帶入任何其他輸入。
-  var safe = 'EM1:' + code.slice(4).replace(/[^A-Za-z0-9\-_+\/=]/g, '');
+  // 前綴只會是 EM1: 或 EM2:（decode 已檢查），其餘只留 URL-safe 字元。
+  var safe = code.slice(0, 4) + code.slice(4).replace(/[^A-Za-z0-9\-_+\/=]/g, '');
   var appUrl = 'eatmatch://i?c=' + encodeURIComponent(safe);
   document.getElementById('open').href = appUrl;
   autoOpen(appUrl);
+  }
 
 })();
 </script>
