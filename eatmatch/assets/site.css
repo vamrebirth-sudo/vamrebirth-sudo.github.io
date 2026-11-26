@@ -76,16 +76,19 @@ header.site img {
 }
 
 header.site h1 {
-  font-size: 22px;
+  font-size: 24px;
+  font-weight: 800;
   line-height: 1.25;
+  letter-spacing: 0.02em;
   margin: 0;
-  color: var(--text-hi);
+  color: var(--brand);
 }
 
 header.site p {
   margin: 2px 0 0;
-  color: var(--text-lo);
+  color: var(--text-md);
   font-size: 14px;
+  font-weight: 500;
 }
 
 nav {
@@ -259,7 +262,7 @@ footer {
   }
 
   header.site h1 {
-    font-size: 20px;
+    font-size: 22px;
   }
 
   main > h1 {
