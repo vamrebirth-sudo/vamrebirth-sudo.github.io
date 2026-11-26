@@ -233,6 +233,17 @@ code {
   color: var(--text-hi);
 }
 
+.brand {
+  display: inline-block;
+  font-weight: 700;
+  color: var(--brand-strong);
+  background: var(--accent-soft);
+  padding: 0 6px;
+  margin: 0 2px;
+  border-radius: 6px;
+  line-height: 1.5;
+}
+
 footer {
   margin-top: 40px;
   padding-top: 16px;
